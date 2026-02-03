@@ -154,3 +154,45 @@ export async function getAssessments() {
     throw new Error("Failed to fetch assessments");
   }
 }
+// -----------------------------
+// TEMP ALIASES FOR DEPLOY FIX
+// -----------------------------
+
+export async function getCoverLetters() {
+  return getAssessments();
+}
+
+export async function getCoverLetter(id) {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthorized");
+
+  const user = await db.user.findUnique({
+    where: { clerkUserId: userId },
+  });
+
+  if (!user) throw new Error("User not found");
+
+  return db.assessment.findFirst({
+    where: {
+      id,
+      userId: user.id,
+    },
+  });
+}
+
+export async function deleteCoverLetter(id) {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthorized");
+
+  const user = await db.user.findUnique({
+    where: { clerkUserId: userId },
+  });
+
+  if (!user) throw new Error("User not found");
+
+  return db.assessment.delete({
+    where: {
+      id,
+    },
+  });
+}
