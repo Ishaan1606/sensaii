@@ -5,16 +5,30 @@ import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { generateAIInsights } from "./dashboard";
 import { success } from "zod";
+import { currentUser } from "@clerk/nextjs/server";
+
 
 export async function updateUser(data) {
   const { userId } = await auth();
   if (!userId) throw new Error("Unauthorized");
 
-  const user = await db.user.findUnique({
-    where: { clerkUserId: userId },
-  });
+  let user = await db.user.findUnique({
+  where: { clerkUserId: userId },
+});
 
-  if (!user) throw new Error("User not found");
+
+if (!user) {
+const clerkUser = await currentUser();
+  if (!clerkUser) throw new Error("Clerk user missing");
+
+  user = await db.user.create({
+    data: {
+      clerkUserId: userId,
+      email: clerkUser.emailAddresses[0].emailAddress,
+      name: clerkUser.firstName || "",
+    },
+  });
+}
 
   try {
     // Start a transaction to handle both operations
@@ -72,11 +86,23 @@ export async function getUserOnboardingStatus() {
   const { userId } = await auth();
   if (!userId) throw new Error("Unauthorized");
 
-  const user = await db.user.findUnique({
-    where: { clerkUserId: userId },
-  });
+  let user = await db.user.findUnique({
+  where: { clerkUserId: userId },
+});
 
-  if (!user) throw new Error("User not found");
+
+if (!user) {
+const clerkUser = await currentUser();
+  if (!clerkUser) throw new Error("Clerk user missing");
+
+  user = await db.user.create({
+    data: {
+      clerkUserId: userId,
+      email: clerkUser.emailAddresses[0].emailAddress,
+      name: clerkUser.firstName || "",
+    },
+  });
+}
 
   try {
     const user = await db.user.findUnique({
